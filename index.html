@@ -2,25 +2,54 @@
 <html>
 <head>
     <title>Rock Paper Scissors</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
         canvas {
-            border: 1px solid black;
             display: block;
-            margin: 20px auto;
+            width: 100vw;
+            height: 100vh;
         }
         #controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
             text-align: center;
-            margin: 20px;
+            padding: 10px 0;
+            background: rgba(255, 255, 255, 0.8);
         }
         button {
-            padding: 10px 20px;
-            margin: 0 10px;
-            font-size: 16px;
+            padding: 15px 25px;
+            margin: 0 5px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+
+        /* Adjustments for smaller screens */
+        @media screen and (max-width: 400px) {
+            button {
+                padding: 10px 15px;
+                font-size: 14px;
+                margin: 0 2px;
+            }
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <div id="controls">
         <button onclick="play('stone')">Stone</button>
         <button onclick="play('paper')">Paper</button>
@@ -30,6 +59,14 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // Set canvas size to full screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
         // Load images
         const stoneImg = new Image();
@@ -60,59 +97,62 @@
         }
 
         function draw() {
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Scale elements based on screen size
+            const scale = Math.min(canvas.width / 600, canvas.height / 400);
+            const imgSize = 200 * scale;
+            const margin = 50 * scale;
+
             // Animation positions
-            let aiY = -200;
-            let playerY = 400;
+            let aiY = -imgSize;
+            let playerY = canvas.height;
             
             if (isAnimating && animationFrame <= 20) {
-                aiY = -200 + (250 * animationFrame / 20);
-                playerY = 400 - (200 * animationFrame / 20);
+                aiY = -imgSize + ((margin + imgSize) * animationFrame / 20);
+                playerY = canvas.height - ((canvas.height - (canvas.height - imgSize - margin)) * animationFrame / 20);
                 animationFrame++;
             } else {
-                aiY = 50;
-                playerY = 200;
+                aiY = margin;
+                playerY = canvas.height - imgSize - margin;
                 if (isAnimating) {
                     isAnimating = false;
                 }
             }
 
-            // Draw AI choice (rotated) at top
+            // Draw AI choice
             if (aiChoice) {
                 const aiImg = getImage(aiChoice);
                 ctx.save();
-                ctx.translate(250, aiY);
+                ctx.translate(canvas.width/2, aiY);
                 ctx.rotate(Math.PI);
-                ctx.drawImage(aiImg, -100, -100, 200, 200);
+                ctx.drawImage(aiImg, -imgSize/2, -imgSize/2, imgSize, imgSize);
                 ctx.restore();
             }
 
-            // Draw player choice at bottom
+            // Draw player choice
             if (playerChoice) {
                 const playerImg = getImage(playerChoice);
-                ctx.drawImage(playerImg, 200, playerY, 200, 200);
+                ctx.drawImage(playerImg, (canvas.width - imgSize)/2, playerY, imgSize, imgSize);
             }
 
-            // Draw result overlay over hands
+            // Draw result overlay
             if (resultText && !isAnimating) {
-                // Semi-transparent background for readability
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.fillRect(150, 150, 300, 100);
+                ctx.fillRect(canvas.width/4, canvas.height/2 - 50 * scale, canvas.width/2, 100 * scale);
                 
-                ctx.font = 'bold 60px Arial';
+                ctx.font = `bold ${60 * scale}px Arial`;
                 ctx.fillStyle = resultColor;
                 ctx.textAlign = 'center';
-                ctx.fillText(resultText, canvas.width/2, canvas.height/2 + 30);
+                ctx.fillText(resultText, canvas.width/2, canvas.height/2 + 30 * scale);
             }
 
-            // Draw scores (on top of everything)
-            ctx.font = '20px Arial';
+            // Draw scores
+            ctx.font = `${20 * scale}px Arial`;
             ctx.fillStyle = 'black';
             ctx.textAlign = 'left';
-            ctx.fillText(`AI Score: ${aiScore}`, 10, 30);
-            ctx.fillText(`Player Score: ${playerScore}`, 10, canvas.height - 10);
+            ctx.fillText(`AI Score: ${aiScore}`, 10 * scale, 30 * scale);
+            ctx.fillText(`Player Score: ${playerScore}`, 10 * scale, canvas.height - 10 * scale);
 
             if (isAnimating) {
                 requestAnimationFrame(draw);
@@ -122,7 +162,7 @@
         function determineWinner(player, ai) {
             if (player === ai) {
                 resultText = "IT'S A TIE!";
-                resultColor = '#000000'; // Black for tie
+                resultColor = '#000000';
                 return "It's a tie!";
             }
             if (
@@ -132,12 +172,12 @@
             ) {
                 playerScore++;
                 resultText = 'YOU WIN!';
-                resultColor = '#00FF00'; // Bright green
+                resultColor = '#00FF00';
                 return "You win!";
             } else {
                 aiScore++;
                 resultText = 'AI WINS!';
-                resultColor = '#FF0000'; // Bold red
+                resultColor = '#FF0000';
                 return "AI wins!";
             }
         }
@@ -147,23 +187,23 @@
             aiChoice = choices[Math.floor(Math.random() * 3)];
             animationFrame = 0;
             isAnimating = true;
-            resultText = ''; // Clear previous result
+            resultText = '';
             
             draw();
             
             setTimeout(() => {
                 determineWinner(playerChoice, aiChoice);
-                draw(); // Redraw with result overlay
+                draw();
             }, 350);
         }
 
-        // Wait for images to load before starting
+        // Wait for images to load
         Promise.all([
             new Promise(resolve => stoneImg.onload = resolve),
             new Promise(resolve => paperImg.onload = resolve),
             new Promise(resolve => scissorImg.onload = resolve)
         ]).then(() => {
-            draw(); // Initial draw
+            draw();
         });
     </script>
 </body>
