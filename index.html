@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rock Paper Scissors</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 20px auto;
+        }
+        #controls {
+            text-align: center;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <div id="controls">
+        <button onclick="play('stone')">Stone</button>
+        <button onclick="play('paper')">Paper</button>
+        <button onclick="play('scissor')">Scissors</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Load images
+        const stoneImg = new Image();
+        stoneImg.src = 'stone.png';
+        const paperImg = new Image();
+        paperImg.src = 'paper.png';
+        const scissorImg = new Image();
+        scissorImg.src = 'scissor.png';
+
+        const choices = ['stone', 'paper', 'scissor'];
+        let playerChoice = null;
+        let aiChoice = null;
+        let animationFrame = 0;
+        let isAnimating = false;
+        let resultText = '';
+        let resultColor = '';
+
+        // Game state
+        let playerScore = 0;
+        let aiScore = 0;
+
+        function getImage(choice) {
+            switch(choice) {
+                case 'stone': return stoneImg;
+                case 'paper': return paperImg;
+                case 'scissor': return scissorImg;
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Animation positions
+            let aiY = -200;
+            let playerY = 400;
+            
+            if (isAnimating && animationFrame <= 20) {
+                aiY = -200 + (250 * animationFrame / 20);
+                playerY = 400 - (200 * animationFrame / 20);
+                animationFrame++;
+            } else {
+                aiY = 50;
+                playerY = 200;
+                if (isAnimating) {
+                    isAnimating = false;
+                }
+            }
+
+            // Draw AI choice (rotated) at top
+            if (aiChoice) {
+                const aiImg = getImage(aiChoice);
+                ctx.save();
+                ctx.translate(250, aiY);
+                ctx.rotate(Math.PI);
+                ctx.drawImage(aiImg, -100, -100, 200, 200);
+                ctx.restore();
+            }
+
+            // Draw player choice at bottom
+            if (playerChoice) {
+                const playerImg = getImage(playerChoice);
+                ctx.drawImage(playerImg, 200, playerY, 200, 200);
+            }
+
+            // Draw result overlay over hands
+            if (resultText && !isAnimating) {
+                // Semi-transparent background for readability
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillRect(150, 150, 300, 100);
+                
+                ctx.font = 'bold 60px Arial';
+                ctx.fillStyle = resultColor;
+                ctx.textAlign = 'center';
+                ctx.fillText(resultText, canvas.width/2, canvas.height/2 + 30);
+            }
+
+            // Draw scores (on top of everything)
+            ctx.font = '20px Arial';
+            ctx.fillStyle = 'black';
+            ctx.textAlign = 'left';
+            ctx.fillText(`AI Score: ${aiScore}`, 10, 30);
+            ctx.fillText(`Player Score: ${playerScore}`, 10, canvas.height - 10);
+
+            if (isAnimating) {
+                requestAnimationFrame(draw);
+            }
+        }
+
+        function determineWinner(player, ai) {
+            if (player === ai) {
+                resultText = "IT'S A TIE!";
+                resultColor = '#000000'; // Black for tie
+                return "It's a tie!";
+            }
+            if (
+                (player === 'stone' && ai === 'scissor') ||
+                (player === 'paper' && ai === 'stone') ||
+                (player === 'scissor' && ai === 'paper')
+            ) {
+                playerScore++;
+                resultText = 'YOU WIN!';
+                resultColor = '#00FF00'; // Bright green
+                return "You win!";
+            } else {
+                aiScore++;
+                resultText = 'AI WINS!';
+                resultColor = '#FF0000'; // Bold red
+                return "AI wins!";
+            }
+        }
+
+        function play(choice) {
+            playerChoice = choice;
+            aiChoice = choices[Math.floor(Math.random() * 3)];
+            animationFrame = 0;
+            isAnimating = true;
+            resultText = ''; // Clear previous result
+            
+            draw();
+            
+            setTimeout(() => {
+                determineWinner(playerChoice, aiChoice);
+                draw(); // Redraw with result overlay
+            }, 350);
+        }
+
+        // Wait for images to load before starting
+        Promise.all([
+            new Promise(resolve => stoneImg.onload = resolve),
+            new Promise(resolve => paperImg.onload = resolve),
+            new Promise(resolve => scissorImg.onload = resolve)
+        ]).then(() => {
+            draw(); // Initial draw
+        });
+    </script>
+</body>
+</html>
