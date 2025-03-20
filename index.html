@@ -38,7 +38,6 @@
             background: #45a049;
         }
 
-        /* Adjustments for smaller screens */
         @media screen and (max-width: 400px) {
             button {
                 padding: 10px 15px;
@@ -101,8 +100,8 @@
 
             // Scale elements based on screen size
             const scale = Math.min(canvas.width / 600, canvas.height / 400);
-            const imgSize = 200 * scale;
-            const margin = 50 * scale;
+            const imgSize = canvas.width * 0.7; // 70% of screen width
+            const margin = canvas.height * 0.05; // 5% of screen height as margin
 
             // Animation positions
             let aiY = -imgSize;
